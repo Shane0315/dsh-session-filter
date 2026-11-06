@@ -27,6 +27,7 @@ function locate(): { header: HTMLElement; area: HTMLElement } | null {
 export function SessionFilterEntry({ ctx }: { ctx: SessionFilterContext }) {
   const [saved, setSaved] = useState(load)
   const [target, setTarget] = useState<HTMLElement | null>(null)
+  const [bounds, setBounds] = useState({ left: 0, top: 0, width: 0, height: 0 })
   const [diagnostic, setDiagnostic] = useState('')
   const [query, setQuery] = useState('')
   const [schedule, setSchedule] = useState<{ status: 'loading' | 'ready' | 'error'; deliveries: Map<string, number>; error?: string }>({ status: 'loading', deliveries: new Map() })
@@ -114,7 +115,9 @@ export function SessionFilterEntry({ ctx }: { ctx: SessionFilterContext }) {
       if (!found && rail) { anchor.style.display = 'none'; setDiagnostic(''); setTarget(null); return }
       if (!found) { anchor.style.display = 'inline-flex'; anchor.style.left = '8px'; anchor.style.top = '100px'; setDiagnostic('未找到工作区列表'); setTarget(null); return }
       const rect = (found.header.querySelector('button') ?? found.header).getBoundingClientRect()
-      const visible = rect.width > 0 && found.area.getBoundingClientRect().width > 0
+      const areaRect = found.area.getBoundingClientRect()
+      const visible = rect.width > 0 && areaRect.width > 0
+      if (visible) setBounds((old) => old.left === areaRect.left && old.top === areaRect.top && old.width === areaRect.width && old.height === areaRect.height ? old : { left: areaRect.left, top: areaRect.top, width: areaRect.width, height: areaRect.height })
       anchor.style.display = visible ? 'inline-flex' : 'none'
       setDiagnostic('')
       if (visible) { anchor.style.left = `${Math.round(rect.left - 32)}px`; anchor.style.top = `${Math.round(rect.top + (rect.height - 28) / 2)}px` }
@@ -124,7 +127,8 @@ export function SessionFilterEntry({ ctx }: { ctx: SessionFilterContext }) {
     const observer = new MutationObserver(schedule)
     observer.observe(document.body, { childList: true, subtree: true })
     window.addEventListener('resize', schedule)
-    return () => { observer.disconnect(); resize.disconnect(); window.removeEventListener('resize', schedule); cancelAnimationFrame(frame) }
+    window.addEventListener('scroll', schedule, true)
+    return () => { observer.disconnect(); resize.disconnect(); window.removeEventListener('resize', schedule); window.removeEventListener('scroll', schedule, true); cancelAnimationFrame(frame) }
   }, [])
   useLayoutEffect(() => {
     if (!saved.active || !target) return
@@ -152,6 +156,6 @@ export function SessionFilterEntry({ ctx }: { ctx: SessionFilterContext }) {
         <SessionFilterBell />{diagnostic && <span className="dsf-diagnostic" role="status">{diagnostic}</span>}{attention.size > 0 && <span className="dsf-count">{attention.size}</span>}
       </button>
     </div>
-    {saved.active && target && createPortal(<div className="dsf-portal"><ActivityList rows={rows} attention={attention} retained={retained} query={query} setQuery={(value) => { setQuery(value); setLimit(10) }} limit={limit} more={() => setLimit((n) => n + 10)} schedule={schedule} retrySchedule={() => setScheduleRetry((value) => value + 1)} archive={(row, stopActivity) => ctx.uiWorkspace.archiveSession(row.id, stopActivity ? { stopActivity: true } : {})} preferences={saved.preferences} setPreferences={(preferences) => setSaved((s) => ({ ...s, preferences }))} menu={menu} setMenu={setMenu} loading={sessions.phase === 'pending' || workspaces.phase === 'pending'} error={Boolean(sessions.error || workspaces.error)} acknowledge={() => acknowledge(rows.filter((row) => attention.has(row.id)))} clear={() => setRetained(new Set(attention))} open={(row) => { acknowledge([row]); ctx.uiWorkspace.openSession(row.id) }} /></div>, target)}
+    {saved.active && target && createPortal(<div className="dsf-portal" style={{ position: 'fixed', left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height, zIndex: 9 }}><ActivityList rows={rows} attention={attention} retained={retained} query={query} setQuery={(value) => { setQuery(value); setLimit(10) }} limit={limit} more={() => setLimit((n) => n + 10)} schedule={schedule} retrySchedule={() => setScheduleRetry((value) => value + 1)} archive={(row, stopActivity) => ctx.uiWorkspace.archiveSession(row.id, stopActivity ? { stopActivity: true } : {})} preferences={saved.preferences} setPreferences={(preferences) => setSaved((s) => ({ ...s, preferences }))} menu={menu} setMenu={setMenu} loading={sessions.phase === 'pending' || workspaces.phase === 'pending'} error={Boolean(sessions.error || workspaces.error)} acknowledge={() => acknowledge(rows.filter((row) => attention.has(row.id)))} clear={() => setRetained(new Set(attention))} open={(row) => { acknowledge([row]); ctx.uiWorkspace.openSession(row.id) }} /></div>, document.body)}
   </>
 }

@@ -33,6 +33,8 @@ test('真实 React 接线：状态订阅、已读与清理、搜索、选项、�
  await act(async () => { root.render(React.createElement(SessionFilterEntry, { ctx })) })
  await click('[aria-label="打开活动视图"]')
  assert.ok(document.querySelector('[data-dsf-active]')); assert.match(document.body.textContent!, /未读完成/)
+ assert.equal(document.querySelector('.dsf-portal')?.parentElement, document.body)
+ assert.equal(document.querySelector('[data-dsf-active] .dsf-portal'), null)
  await act(async () => { root.unmount() }); statusStore.set(new Map()); root = createRoot(document.querySelector('#mount')!); await act(async () => { root.render(React.createElement(SessionFilterEntry, { ctx })) }); assert.match(document.body.textContent!, /未读完成/)
  await click('[aria-label="活动选项"]'); await textButton('全部标为已读'); assert.doesNotMatch(document.querySelector('.dsf-status')!.textContent!, /未读/); assert.match(document.body.textContent!, /需关注/)
  await act(async () => { root.unmount() }); root = createRoot(document.querySelector('#mount')!); await act(async () => { root.render(React.createElement(SessionFilterEntry, { ctx })) }); assert.doesNotMatch(document.body.textContent!, /未读完成/)
