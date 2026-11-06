@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-filter",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Cross-workspace activity sidebar for DeepSeek Harness with live session status, search and local read tracking.",
   "type": "module",
   "main": "./lib/index.js",
@@ -34,7 +34,7 @@
       "patch": "cordis.patch.yml"
     },
     "engines": {
-      "dsh": ">=0.2.1-rc.2"
+      "dsh": ">=0.2.1-rc.5"
     },
     "client": {
       "inject": [
@@ -63,7 +63,8 @@
     "typescript": "^5.9.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "dsh": ">=0.2.1-rc.5"
   },
   "license": "MIT",
   "repository": {
